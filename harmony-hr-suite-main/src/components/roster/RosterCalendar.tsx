@@ -143,10 +143,10 @@ export function RosterCalendar({ isAdmin }: RosterCalendarProps) {
         try {
             const existing = rosterEntries.find(r => r.employee_id === employeeId && r.date === formattedDate);
             if (existing) {
-                const { error } = await (supabase as any).from('roster_entries').update({ shift_id: shiftId }).eq('id', existing.id);
+                const { error } = await supabase.from('roster_entries').update({ shift_id: shiftId }).eq('id', existing.id);
                 if (error) throw error;
             } else {
-                const { error } = await (supabase as any).from('roster_entries').insert({ employee_id: employeeId, shift_id: shiftId, date: formattedDate });
+                const { error } = await supabase.from('roster_entries').insert({ employee_id: employeeId, shift_id: shiftId, date: formattedDate });
                 if (error) throw error;
             }
             toast({ title: 'Shift Assigned', description: 'Roster updated successfully.' });
@@ -158,7 +158,7 @@ export function RosterCalendar({ isAdmin }: RosterCalendarProps) {
 
     const removeShift = async (entryId: string) => {
         try {
-            const { error } = await (supabase as any).from('roster_entries').delete().eq('id', entryId);
+            const { error } = await supabase.from('roster_entries').delete().eq('id', entryId);
             if (error) throw error;
             toast({ title: 'Shift Removed', description: 'Shift removed from roster.' });
             fetchData();
@@ -203,7 +203,7 @@ export function RosterCalendar({ isAdmin }: RosterCalendarProps) {
         }
 
         try {
-            const { error } = await (supabase as any).from('roster_entries').insert(newEntries);
+            const { error } = await supabase.from('roster_entries').insert(newEntries);
             if (error) throw error;
             toast({ title: 'Auto-Schedule Complete', description: `Assigned ${newEntries.length} new shifts.` });
             fetchData();

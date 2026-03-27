@@ -114,7 +114,7 @@ export function ShiftManager() {
         }
 
         try {
-            const { error } = await (supabase as any)
+            const { error } = await supabase
                 .from('shifts')
                 .insert([{
                     name: name.trim(),
@@ -146,7 +146,7 @@ export function ShiftManager() {
 
     const handleDeleteShift = async (id: string) => {
         try {
-            const { error } = await (supabase as any)
+            const { error } = await supabase
                 .from('shifts')
                 .delete()
                 .eq('id', id);

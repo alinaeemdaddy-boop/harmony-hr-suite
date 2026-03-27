@@ -2,17 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+
 import {
     Table,
     TableBody,
@@ -50,6 +40,8 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
+import { TaskCreator } from './TaskCreator';
+
 interface GeneralTask {
     id: string;
     title: string;
@@ -78,26 +70,11 @@ export function TaskManager() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [saving, setSaving] = useState(false);
-
     const isAdmin = role === 'super_admin' || role === 'hr_admin';
-
-    // Form State
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        assigned_to: '',
-        priority: 'medium' as const,
-        due_date: format(new Date(), 'yyyy-MM-dd'),
-    });
 
     useEffect(() => {
         fetchTasks();
-        if (isAdmin) {
-            fetchEmployees();
-        }
-    }, [isAdmin]);
+    }, []);
 
     const fetchTasks = async () => {
         setLoading(true);
@@ -126,51 +103,7 @@ export function TaskManager() {
         }
     };
 
-    const fetchEmployees = async () => {
-        const { data, error } = await supabase
-            .from('employees')
-            .select('id, full_name, avatar_url')
-            .eq('status', 'active');
 
-        if (!error) setEmployees(data || []);
-    };
-
-    const handleCreateTask = async () => {
-        if (!formData.title || !formData.assigned_to) {
-            toast({ title: 'Validation Error', description: 'Please fill in required fields', variant: 'destructive' });
-            return;
-        }
-
-        setSaving(true);
-        try {
-            const { error } = await supabase.from('general_tasks').insert({
-                title: formData.title,
-                description: formData.description,
-                assigned_to: formData.assigned_to,
-                priority: formData.priority,
-                due_date: formData.due_date,
-                created_by: user?.id,
-                status: 'todo'
-            });
-
-            if (error) throw error;
-
-            toast({ title: 'Success', description: 'Task created and assigned successfully' });
-            setIsDialogOpen(false);
-            setFormData({
-                title: '',
-                description: '',
-                assigned_to: '',
-                priority: 'medium',
-                due_date: format(new Date(), 'yyyy-MM-dd'),
-            });
-            fetchTasks();
-        } catch (error: any) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        } finally {
-            setSaving(false);
-        }
-    };
 
     const updateTaskStatus = async (taskId: string, newStatus: GeneralTask['status']) => {
         try {
@@ -217,80 +150,9 @@ export function TaskManager() {
                     <h1 className="text-2xl font-bold font-display">Task Management</h1>
                     <p className="text-muted-foreground text-sm">Assign and track operational tasks</p>
                 </div>
-
-<TaskCreator employees={employees} onTaskCreated={fetchTasks} />
-                        <DialogContent className="sm:max-w-[425px] glass-card">
-                            <DialogHeader>
-                                <DialogTitle>Create Task</DialogTitle>
-                                <DialogDescription>Assign a new operational task to an employee</DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="title">Task Title*</Label>
-                                    <Input
-                                        id="title"
-                                        placeholder="e.g. Steralize Surgery Room 3"
-                                        value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="desc">Description</Label>
-                                    <Textarea
-                                        id="desc"
-                                        placeholder="Detailed instructions..."
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="assign">Assign To*</Label>
-                                    <select
-                                        id="assign"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={formData.assigned_to}
-                                        onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                                    >
-                                        <option value="">Select Employee</option>
-                                        {employees.map(emp => (
-                                            <option key={emp.id} value={emp.id}>{emp.full_name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="priority">Priority</Label>
-                                        <select
-                                            id="priority"
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            value={formData.priority}
-                                            onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-                                        >
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
-                                            <option value="urgent">Urgent</option>
-                                        </select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="due">Due Date</Label>
-                                        <Input
-                                            id="due"
-                                            type="date"
-                                            value={formData.due_date}
-                                            onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                                <Button onClick={handleCreateTask} disabled={saving}>{saving ? 'Assigning...' : 'Assign Task'}</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                )}
+                {isAdmin && <TaskCreator employees={employees} onTaskCreated={fetchTasks} />}
             </div>
+
 
             <Card className="glass-card border-0">
                 <CardHeader className="p-4 border-b">
